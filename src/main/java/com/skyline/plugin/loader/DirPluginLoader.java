@@ -38,10 +38,18 @@ public class DirPluginLoader extends ClassLoader {
         return super.findClass(name);
     }
 
+    /**
+     * 获取已被加载的插件注册表
+     *
+     * @return HashMap 已被加载的插件注册表
+     */
     public HashMap<Class<?>, HashSet<AbstractPlugin>> getPluginLoadedMap() {
         return pluginLoadedMap;
     }
 
+    /**
+     * 加载文件夹下所有允许加载的插件
+     */
     public void loadPlugin() {
         loadProperties();
         HashSet<Class<?>> pluginClsSet = loadPluginFromJars();

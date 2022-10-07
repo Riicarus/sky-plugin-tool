@@ -14,8 +14,6 @@ import java.net.URLClassLoader;
 public class SinglePluginLoader extends URLClassLoader {
 
     /**
-     * 初始化时不会主动加载插件, 需要调用 loadPlugin() 方法才会加载
-     *
      * @param url 插件所在的文件路径
      * @param parent 父类加载器
      */
