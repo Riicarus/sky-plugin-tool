@@ -228,6 +228,49 @@ public class DirPluginLoader extends ClassLoader {
     /**
      * 卸载插件
      *
+     * @param plugin AbstractPlugin 需要被卸载的插件
+     */
+    public void unloadPlugin(AbstractPlugin plugin) {
+        for (Map.Entry<Class<?>, HashSet<AbstractPlugin>> entry : pluginLoadedMap.entrySet()) {
+            if (entry.getKey().isAssignableFrom(plugin.getClass())) {
+                HashSet<AbstractPlugin> pluginSet = entry.getValue();
+
+                Iterator<AbstractPlugin> iterator = pluginSet.iterator();
+                while (iterator.hasNext()) {
+                    AbstractPlugin p = iterator.next();
+                    if (p.equals(plugin)) {
+                        if (uninstallPlugin(p)) {
+                            iterator.remove();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 卸载插件<br/>
+     * 此方法效率较低
+     *
+     * @param pluginId Integer, 插件id
+     */
+    public void unloadPlugin(int pluginId) {
+        for (Map.Entry<Class<?>, HashSet<AbstractPlugin>> entry : pluginLoadedMap.entrySet()) {
+            Iterator<AbstractPlugin> iterator = entry.getValue().iterator();
+            while (iterator.hasNext()) {
+                AbstractPlugin p = iterator.next();
+                if (p.getPluginInfo().getId().equals(pluginId)) {
+                    if (uninstallPlugin(p)) {
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 卸载插件
+     *
      * @param plugin AbstractPlugin 插件
      */
     private boolean uninstallPlugin(AbstractPlugin plugin) {
