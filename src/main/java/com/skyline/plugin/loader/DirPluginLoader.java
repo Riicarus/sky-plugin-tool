@@ -1,7 +1,6 @@
 package com.skyline.plugin.loader;
 
 import com.skyline.plugin.AbstractPlugin;
-import com.skyline.plugin.PluginInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,12 +19,30 @@ import java.util.jar.JarFile;
  */
 public class DirPluginLoader extends ClassLoader {
 
+    /**
+     * 需要被加载的插件所在的文件目录, 使用绝对路径
+     */
     private final String dir;
 
+    /**
+     * 允许加载的插件接口定义文件路径
+     */
     private final static String CONFIG_PATH = "config/plugins.properties";
 
-    private final HashSet<PluginInfo> disabledPluginSet = new HashSet<>();
-    private final HashMap<Class<?>, HashSet<AbstractPlugin>> pluginLoadedMap = new HashMap<>();
+    /**
+     * 禁止加载的插件集合
+     */
+    private final HashSet<Integer> disabledPluginIdSet = new HashSet<>();
+
+    /**
+     * 允许加载的插件接口集合, 由 CONFIG_PATH 下定义的属性决定
+     */
+    private final HashSet<Class<?>> admittedPluginInterfaceSet = new HashSet<>();
+
+    /**
+     * 被加载成功的插件集合
+     */
+    private final HashSet<AbstractPlugin> loadedPluginSet = new HashSet<>();
 
     public DirPluginLoader(String dir, ClassLoader parent) {
         super(parent);
@@ -41,10 +58,10 @@ public class DirPluginLoader extends ClassLoader {
     /**
      * 获取已被加载的插件注册表
      *
-     * @return HashMap 已被加载的插件注册表
+     * @return HashMap 已被加载的插件集合
      */
-    public HashMap<Class<?>, HashSet<AbstractPlugin>> getPluginLoadedMap() {
-        return pluginLoadedMap;
+    public HashSet<AbstractPlugin> getLoadedPluginSet() {
+        return loadedPluginSet;
     }
 
     /**
@@ -57,10 +74,11 @@ public class DirPluginLoader extends ClassLoader {
     }
 
     /**
-     * 从 plugins.properties 文件中获取 允许被加载的类
+     * 从 plugins.properties 文件中获取 允许被加载的接口
      */
     private void loadProperties() {
-        pluginLoadedMap.clear();
+        admittedPluginInterfaceSet.clear();
+        loadedPluginSet.clear();
 
         Properties properties = new Properties();
 
@@ -84,7 +102,7 @@ public class DirPluginLoader extends ClassLoader {
                 continue;
             }
 
-            pluginLoadedMap.put(clazz, new HashSet<>());
+            admittedPluginInterfaceSet.add(clazz);
         }
 
         try {
@@ -143,9 +161,14 @@ public class DirPluginLoader extends ClassLoader {
         return pluginClsSet;
     }
 
+    /**
+     * 从所有读取出来的类文件集合中, 加载插件
+     *
+     * @param pluginClsSet 从对应路径读取出的可用的类文件集合
+     */
     private void installPlugins(HashSet<Class<?>> pluginClsSet) {
         for (Class<?> clazz : pluginClsSet) {
-            for (Class<?> cls : pluginLoadedMap.keySet()) {
+            for (Class<?> cls : admittedPluginInterfaceSet) {
                 if (cls.isAssignableFrom(clazz)) {
                     AbstractPlugin plugin;
                     try {
@@ -159,14 +182,14 @@ public class DirPluginLoader extends ClassLoader {
                         continue;
                     }
 
-                    if (disabledPluginSet.contains(plugin.getPluginInfo())) {
+                    if (disabledPluginIdSet.contains(plugin.getPluginInfo().getId())) {
                         System.out.println(plugin.getPluginInfo().getName() + "[" + plugin.getPluginInfo().getVersion() + "] " + "已被禁用, 不做加载.");
                     }
 
                     System.out.println(plugin.getPluginInfo().getName() + "[" + plugin.getPluginInfo().getVersion() + "] " + "正在加载 ......");
                     if (plugin.install(null)) {
                         System.out.println(plugin.getPluginInfo().getName() + "[" + plugin.getPluginInfo().getVersion() + "] " + "加载成功.");
-                        pluginLoadedMap.get(cls).add(plugin);
+                        loadedPluginSet.add(plugin);
                     }
                     else {
                         System.out.println(plugin.getPluginInfo().getName() + "[" + plugin.getPluginInfo().getVersion() + "] " + "加载失败.");
@@ -186,38 +209,51 @@ public class DirPluginLoader extends ClassLoader {
      * @param version 插件版本号, 如果为 null, 则卸载对应类型和名称下的所有插件
      */
     public void unloadPlugin(Class<?> clazz, String name, String version) {
-        HashSet<AbstractPlugin> pluginSet = pluginLoadedMap.get(clazz);
-
-        if (pluginSet == null || pluginSet.isEmpty()) {
+        if (loadedPluginSet.isEmpty()) {
             System.out.println("没有加载对应的插件, 无法卸载.");
+            return;
+        }
+
+        if (!admittedPluginInterfaceSet.contains(clazz)) {
+            System.out.println("该插件接口没有加载任何插件.");
             return;
         }
 
         // 只传入 class, 卸载对应类型下所有插件
         if (name == null || "".equals(name.trim())) {
-            pluginSet.removeIf(this::uninstallPlugin);
-            return;
-        }
-
-        // 只传入 class 和 name, 删除对应类型和名称下的所有插件
-        if (version == null || "".equals(version.trim())) {
-            Iterator<AbstractPlugin> iterator = pluginSet.iterator();
+            Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
             while (iterator.hasNext()) {
                 AbstractPlugin plugin = iterator.next();
-                if (plugin.getPluginInfo().getName().equals(name)) {
+                if (clazz.isAssignableFrom(plugin.getClass())) {
                     if (uninstallPlugin(plugin)) {
                         iterator.remove();
                     }
                 }
             }
+
+            return;
+        }
+
+        // 只传入 class 和 name, 删除对应类型和名称下的所有插件
+        if (version == null || "".equals(version.trim())) {
+            Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
+            while (iterator.hasNext()) {
+                AbstractPlugin plugin = iterator.next();
+                if (clazz.isAssignableFrom(plugin.getClass()) && plugin.getPluginInfo().getName().equals(name)) {
+                    if (uninstallPlugin(plugin)) {
+                        iterator.remove();
+                    }
+                }
+            }
+
             return;
         }
 
         // 删除对应类型, 名称, 版本的插件
-        Iterator<AbstractPlugin> iterator = pluginSet.iterator();
+        Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
         while (iterator.hasNext()) {
             AbstractPlugin plugin = iterator.next();
-            if (plugin.getPluginInfo().getName().equals(name) && plugin.getPluginInfo().getVersion().equals(version)) {
+            if (clazz.isAssignableFrom(plugin.getClass()) && plugin.getPluginInfo().getName().equals(name) && plugin.getPluginInfo().getVersion().equals(version)) {
                 if (uninstallPlugin(plugin)) {
                     iterator.remove();
                 }
@@ -231,18 +267,12 @@ public class DirPluginLoader extends ClassLoader {
      * @param plugin AbstractPlugin 需要被卸载的插件
      */
     public void unloadPlugin(AbstractPlugin plugin) {
-        for (Map.Entry<Class<?>, HashSet<AbstractPlugin>> entry : pluginLoadedMap.entrySet()) {
-            if (entry.getKey().isAssignableFrom(plugin.getClass())) {
-                HashSet<AbstractPlugin> pluginSet = entry.getValue();
-
-                Iterator<AbstractPlugin> iterator = pluginSet.iterator();
-                while (iterator.hasNext()) {
-                    AbstractPlugin p = iterator.next();
-                    if (p.equals(plugin)) {
-                        if (uninstallPlugin(p)) {
-                            iterator.remove();
-                        }
-                    }
+        Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
+        while (iterator.hasNext()) {
+            AbstractPlugin p = iterator.next();
+            if (p.equals(plugin)) {
+                if (uninstallPlugin(plugin)) {
+                    iterator.remove();
                 }
             }
         }
@@ -255,14 +285,12 @@ public class DirPluginLoader extends ClassLoader {
      * @param pluginId Integer, 插件id
      */
     public void unloadPlugin(int pluginId) {
-        for (Map.Entry<Class<?>, HashSet<AbstractPlugin>> entry : pluginLoadedMap.entrySet()) {
-            Iterator<AbstractPlugin> iterator = entry.getValue().iterator();
-            while (iterator.hasNext()) {
-                AbstractPlugin p = iterator.next();
-                if (p.getPluginInfo().getId().equals(pluginId)) {
-                    if (uninstallPlugin(p)) {
-                        iterator.remove();
-                    }
+        Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
+        while (iterator.hasNext()) {
+            AbstractPlugin plugin = iterator.next();
+            if (plugin.getPluginInfo().getId().equals(pluginId)) {
+                if (uninstallPlugin(plugin)) {
+                    iterator.remove();
                 }
             }
         }
@@ -277,7 +305,7 @@ public class DirPluginLoader extends ClassLoader {
         boolean success;
 
         if (plugin.uninstall()) {
-            disabledPluginSet.add(plugin.getPluginInfo());
+            disabledPluginIdSet.add(plugin.getPluginInfo().getId());
             success = true;
             System.out.println(plugin.getPluginInfo().getName() + "[" + plugin.getPluginInfo().getVersion() + "] " + "卸载成功.");
         } else {
