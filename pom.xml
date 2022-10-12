@@ -20,6 +20,12 @@
             <artifactId>sky-plugin-base</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.skyline</groupId>
+            <artifactId>sky-command</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>

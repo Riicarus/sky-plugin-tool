@@ -202,6 +202,19 @@ public class DirPluginLoader extends ClassLoader {
     }
 
     /**
+     * 卸载所有插件
+     */
+    public void unloadAll() {
+        Iterator<AbstractPlugin> iterator = loadedPluginSet.iterator();
+        while (iterator.hasNext()) {
+            AbstractPlugin plugin = iterator.next();
+            if (uninstallPlugin(plugin)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /**
      * 卸载插件
      *
      * @param clazz 插件对应的接口类型
