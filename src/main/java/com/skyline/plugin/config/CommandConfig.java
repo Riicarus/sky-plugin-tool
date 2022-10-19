@@ -1,6 +1,7 @@
 package com.skyline.plugin.config;
 
 import com.skyline.command.manage.CommandDispatcher;
+import com.skyline.command.manage.ConsoleIOHandler;
 import com.skyline.command.manage.IOHandler;
 
 /**
@@ -13,7 +14,7 @@ import com.skyline.command.manage.IOHandler;
  */
 public class CommandConfig {
 
-    public static final IOHandler IO_HANDLER = new IOHandler();
+    public static final IOHandler IO_HANDLER = new ConsoleIOHandler();
 
     public static final CommandDispatcher COMMAND_DISPATCHER = new CommandDispatcher();
 

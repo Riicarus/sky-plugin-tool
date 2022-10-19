@@ -47,7 +47,7 @@ public class PluginCommand {
                         }
                 );
         SKY_COMMAND.register().execution("plugin").action("unload")
-                .option("id", "id").argument("id", new StringCommandArgumentType())
+                .option("id", "i").argument("id", new StringCommandArgumentType())
                 .executor(
                         (args) -> {
                             String id = (String) args[0];
