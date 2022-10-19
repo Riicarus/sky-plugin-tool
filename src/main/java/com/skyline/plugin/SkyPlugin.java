@@ -16,7 +16,21 @@ public class SkyPlugin {
 
     private static final SkyCommand SKY_COMMAND = SkyCommand.getSkyCommand(CommandConfig.IO_HANDLER, CommandConfig.COMMAND_DISPATCHER);
 
-    public SkyPlugin() {
+    private volatile static SkyPlugin SKY_PLUGIN;
+
+    private SkyPlugin() {
+    }
+
+    public static SkyPlugin getSkyPlugin() {
+        if (SKY_PLUGIN == null) {
+            synchronized (SkyPlugin.class) {
+                if (SKY_PLUGIN == null) {
+                    SKY_PLUGIN = new SkyPlugin();
+                }
+            }
+        }
+
+        return SKY_PLUGIN;
     }
 
     public void enable() {
