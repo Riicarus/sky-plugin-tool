@@ -117,5 +117,6 @@ plugin unload [all] [dir] <dir>
 plugin unload [id] <id>
 plugin list [all] [dir] <dir>
 plugin list [detail] [id] <id>
+plugin execute [id] <id> [args] <args>
 ```
 使用时, 只需要注意插件放置的目录的绝对路径.

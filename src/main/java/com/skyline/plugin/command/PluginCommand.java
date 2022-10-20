@@ -77,5 +77,16 @@ public class PluginCommand {
                             basicOperation.listDetailOfPlugin(id);
                         }
                 );
+        SKY_COMMAND.register().execution("plugin").action("execute")
+                .option("id", "i").argument("id", new StringCommandArgumentType())
+                .option("args", "A").argument("args", new StringCommandArgumentType())
+                .executor(
+                        (args) -> {
+                            String id = (String) args[0];
+                            String runArgs = (String) args[1];
+                            String[] argArr = runArgs == null ? null : runArgs.trim().split(",");
+                            basicOperation.executePlugin(id, argArr);
+                        }
+                );
     }
 }

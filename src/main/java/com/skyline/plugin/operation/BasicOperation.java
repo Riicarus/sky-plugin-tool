@@ -84,18 +84,37 @@ public class BasicOperation implements Operation {
         loadedPluginSet.forEach(plugin -> System.out.println(plugin.getPluginInfo()));
     }
 
-    public void listDetailOfPlugin(String id) {
+    private AbstractPlugin getPlugin(String id) {
         Integer _id = Integer.parseInt(id);
 
         List<DirPluginLoader> loaders = loaderManager.listAllLoader();
 
-        loaders.forEach(loader -> {
+        for (DirPluginLoader loader : loaders) {
             HashSet<AbstractPlugin> loadedPluginSet = loader.getLoadedPluginSet();
-            loadedPluginSet.forEach(plugin -> {
+            for (AbstractPlugin plugin : loadedPluginSet) {
                 if (plugin.getPluginInfo().getId().equals(_id)) {
-                    System.out.println(plugin.getPluginInfo());
+                    return plugin;
                 }
-            });
-        });
+            }
+        }
+
+        return null;
+    }
+
+    public void listDetailOfPlugin(String id) {
+        AbstractPlugin plugin = getPlugin(id);
+
+        String output = plugin == null ? "No such plugin" : plugin.getPluginInfo().toString();
+        System.out.println(output);
+    }
+
+    public void executePlugin(String id, Object[] args) {
+        AbstractPlugin plugin = getPlugin(id);
+
+        if (plugin != null) {
+            plugin.run(args);
+        } else {
+            System.out.println("No such plugin");
+        }
     }
 }
