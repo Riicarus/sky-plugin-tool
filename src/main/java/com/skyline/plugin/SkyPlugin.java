@@ -14,7 +14,7 @@ import com.skyline.plugin.config.CommandConfig;
  */
 public class SkyPlugin {
 
-    private static final SkyCommand SKY_COMMAND = SkyCommand.getSkyCommand(CommandConfig.IO_HANDLER, CommandConfig.COMMAND_DISPATCHER);
+    private static final SkyCommand SKY_COMMAND = SkyCommand.getSkyCommand(CommandConfig.IO_HANDLER);
 
     private volatile static SkyPlugin SKY_PLUGIN;
 

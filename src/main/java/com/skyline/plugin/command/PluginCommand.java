@@ -2,6 +2,7 @@ package com.skyline.plugin.command;
 
 import com.skyline.command.SkyCommand;
 import com.skyline.command.argument.StringCommandArgumentType;
+import com.skyline.command.command.BaseCommand;
 import com.skyline.plugin.operation.BasicOperation;
 
 /**
@@ -12,14 +13,12 @@ import com.skyline.plugin.operation.BasicOperation;
  * @create 2022-10-12 0:28
  * @since 1.0.0
  */
-public class PluginCommand {
-
-    private final SkyCommand SKY_COMMAND;
+public class PluginCommand extends BaseCommand {
 
     private final BasicOperation basicOperation = new BasicOperation();
 
     public PluginCommand(SkyCommand SKY_COMMAND) {
-        this.SKY_COMMAND = SKY_COMMAND;
+        super(SKY_COMMAND);
     }
 
     public void defineCommand() {
